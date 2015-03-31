@@ -34,6 +34,8 @@ class RunSliceIterator(object):
         return d
 
     def _init_iter(self):
+        if self.first_run_slice_bb is None:
+            raise StopIteration
         self.curr_scan_slices = bb_to_scan_slices(
             bytes(self.first_run_slice_bb.data), self.first_run_slice_bb.run_slice_id)
 
@@ -54,6 +56,9 @@ class RunSliceIterator(object):
         if self.first_run_slice_bb is None:
             return False
         return True
+
+    def __iter__(self):
+        return self
 
     def next(self):
         self._init_iter()

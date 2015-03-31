@@ -3,7 +3,7 @@ __author__ = 'Dubois'
 from itertools import izip
 from collections import namedtuple
 import struct
-import bytebuffer_cpp as bbcpp
+#import bytebuffer_cpp as bbcpp
 
 BoundingBox = namedtuple(
     'BoundingBox', 'id, data, run_slice_id, first_spectrum_id, last_spectrum_id')
@@ -12,19 +12,30 @@ BoundingBox = namedtuple(
 RunSliceHeader = namedtuple(
     'RunSliceHeader', 'id, ms_level, number, begin_mz, end_mz')
 
+#Peak = namedtuple('Peak', 'mz, intensity, rt, rs_id, scan_id')
+
 
 class Peak(object):
 
-    def __init__(self, mz, int_, rt):
+    __slots__ = ['mz', 'intensity', 'rt', 'rs_id', 'scan_id']
+
+    def __init__(self, mz, int_, rt, run_slice_id, scan_id):
         self.mz = mz
         self.intensity = int_
         self.rt = rt
+        self.rs_id = run_slice_id
+        self.scan_id = scan_id
 
     def __str__(self):
         return "mz:{}, intensity:{}, time:{}".format(self.mz, self.intensity, self.rt)
 
+    # def __lt__(self, other):
+    #     return self.mz < other.mz
+
 
 class ScanSlice(object):
+
+    __slots__ = ['scan_id', 'run_slice_id', 'mzs', 'ints']
 
     def __init__(self, scan_id, run_slice_id, mzs, ints):
         self.scan_id = scan_id
@@ -33,7 +44,9 @@ class ScanSlice(object):
         self.ints = ints
 
     def to_peaks(self, elution_time_by_scan_id):
-        return [Peak(mz, int_, elution_time_by_scan_id[self.scan_id]) for mz, int_ in izip(self.mzs, self.ints)]
+        t = elution_time_by_scan_id[self.scan_id]
+        return [Peak(mz, int_, t, self.run_slice_id, self.scan_id)
+                for mz, int_ in izip(self.mzs, self.ints)] # if int_ > 0]
 
 
 # utility functions to unpack bounding boxes
@@ -45,6 +58,7 @@ def build_struct():
     return d
 
 metadata_struct = struct.Struct('<2i')
+metadata_struct_tic = struct.Struct('<i')
 fitted_structure_str = 'dfff'
 
 struct_by_nb_peaks = build_struct()
@@ -109,27 +123,37 @@ def bb_to_scan_slices(data, run_slice_id):
     return ss
 
 
-def bb_to_scan_slices_v3(data, run_slice_id):
-    bytebuff = bbcpp.bytebufferCpp(data)
+# def bb_to_scan_slices_v3(data, run_slice_id):
+#     bytebuff = bbcpp.bytebufferCpp(data)
+#     offset = 0
+#     ss = []
+#     while offset < len(data):
+#         #scan_id, nb_peaks = metadata_struct.unpack_from(data, offset)
+#         scan_id = bytebuff.get_int(offset)
+#         offset += 4
+#         nb_peaks = bytebuff.get_int(offset)
+#         offset += 4
+
+#         if not nb_peaks:
+#             continue
+
+#         end_idx = 20 * nb_peaks
+#         mzs, ints = [], []
+#         for i in xrange(offset, end_idx, 20):
+#             mzs.append(bytebuff.get_double(i))
+#             ints.append(bytebuff.get_float(i + 8))
+#             #skip the left and right
+#         offset += 20 * nb_peaks
+#         s = ScanSlice(scan_id, run_slice_id, mzs, ints)
+#         ss.append(s)
+#     return ss
+
+
+def read_tic(data):
     offset = 0
-    ss = []
-    while offset < len(data):
-        #scan_id, nb_peaks = metadata_struct.unpack_from(data, offset)
-        scan_id = bytebuff.get_int(offset)
-        offset += 4
-        nb_peaks = bytebuff.get_int(offset)
-        offset += 4
-
-        if not nb_peaks:
-            continue
-
-        end_idx = 20 * nb_peaks
-        mzs, ints = [], []
-        for i in xrange(offset, end_idx, 20):
-            mzs.append(bytebuff.get_double(i))
-            ints.append(bytebuff.get_float(i + 8))
-            #skip the left and right
-        offset += 20 * nb_peaks
-        s = ScanSlice(scan_id, run_slice_id, mzs, ints)
-        ss.append(s)
-    return ss
+    nb_peaks = metadata_struct_tic.unpack_from(data, offset)[0]
+    print nb_peaks
+    offset += 4
+    fmt = '<' + 'ff' * nb_peaks
+    f = struct.unpack_from(fmt, data, offset)
+    return f[::2], f[1::2]
