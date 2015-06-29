@@ -67,8 +67,6 @@ class XicWidget(QWidget):
         v.addWidget(self.plotButton)
         self.setLayout(v)
 
-#         #self.plotButton.clicked.connect(self.parent().plot)
-
 
 # # Preloader thread
 def preload_bbs(f):
@@ -77,14 +75,9 @@ def preload_bbs(f):
             connection = sqlite3.connect(str(f.replace("\\", "\\\\")))
             cursor = connection.cursor()
             cursor.execute(sql)
-            i = 0
-            for row in cursor:
-                i += 1
+            for _ in cursor:
                 continue
             connection.close()
-            if not i:
-                logging.warn("No bounding box found...")
-                return False
             return True
         except DatabaseError:
             logging.warn("Database error...")
@@ -103,30 +96,8 @@ class Preloader(QThread):
         p = multiprocessing.Pool(multiprocessing.cpu_count())
         r = p.map(preload_bbs, self.files)
         p.close()
-        #r = [preload_bbs(f)for f in self.files]
         self.loaded.emit((self.files, r))
-#
-#
-# #Xic thread
-# #not suitable
-# def get_xic(data):
-#     f = data[0]
-#     min_mz, max_mz = data[1], data[2]
-#     return MzDBReader(str(f.replace("\\", "\\\\"))).get_xic(min_mz, max_mz), data[3]
-#
-#
-# class Extractor(QThread):
-#
-#     extracted = pyqtSignal(object)
-#
-#     def __init__(self, args, parent=None):
-#         QThread.__init__(self, parent)
-#         self.args = args
-#
-#     def run(self):
-#         p = multiprocessing.Pool(multiprocessing.cpu_count())
-#         r = p.map(get_xic, self.args)
-#         self.extracted.emit(r)
+
 
 
 class Rawfile(object):
@@ -140,18 +111,18 @@ class Rawfile(object):
         self.is_highlighted = False
 
 
-#Main gui
+# Main gui
 class Aditi(QMainWindow):
 
     def __init__(self):
         QMainWindow.__init__(self)
 
-        #title
+        # title
         self.setWindowTitle("Aditi")
         self.setDockOptions(QMainWindow.VerticalTabs | QMainWindow.AnimatedDocks)
         #self.showMaximized()
 
-        #model
+        # model
         self.rawfiles_by_short_path = {}
         self.xic_by_rawfile_short_path = {}
         self.tic_by_rawfile_short_path = {}
@@ -170,16 +141,13 @@ class Aditi(QMainWindow):
         self.file_menu.addAction(open_action)
         open_action.triggered.connect(self.show_open_dialog)
 
-        #QObject.connect(open_action, SIGNAL('triggered()'), self.show_open_dialog)
-
         exit_action = QAction("&Exit", self)
         exit_action.setShortcut(QKeySequence(Qt.CTRL + Qt.Key_Q))
         self.file_menu.addAction(exit_action)
         exit_action.triggered.connect(self.quit)
-        #QObject.connect(exit_action, SIGNAL('triggered()'), self.quit)
 
         self.tab_widget = QTabWidget(self)
-        #spectrum plot Widget
+        # spectrum plot Widget
         self.graphics_layout_widget = GraphicsLayoutWidget(parent=self.tab_widget)
 
         self.graphics_layout_widget.keyPressEvent = self.handle_key_press_event
@@ -198,10 +166,10 @@ class Aditi(QMainWindow):
                                                                                                   'bottom': "m/z"})
         self.plot_widget_spectrum.showGrid(x=True, y=True)
 
-        #finally add tab
+        # finally add tab
         self.tab_widget.addTab(self.graphics_layout_widget, "Spectrum")
 
-        #Xic plotWidget
+        # Xic plotWidget
         self.plot_widget_xic = PlotWidget(name="MainPlot", labels={'left': "Intensity",
                                                                    'bottom': "Retention Time (sec)"})
         self.plot_widget_xic.showGrid(x=True, y=True)
@@ -212,7 +180,7 @@ class Aditi(QMainWindow):
 
         self.statusBar().showMessage("Ready")
 
-        #dock 1
+        # dock 1
         self.rawfile_dock_widget = QDockWidget("Rawfiles")
         self.rawfile_table_view = QTableView()
         self.rawfile_table_view.horizontalHeader().setVisible(False)
@@ -227,7 +195,7 @@ class Aditi(QMainWindow):
 
         self.addDockWidget(0x2, self.rawfile_dock_widget)
 
-        #xic dock widget extraction parameter
+        # xic dock widget extraction parameter
         self.xic_dock_widget = QDockWidget("Xic extraction")
 
         self.xic_widget = XicWidget()
@@ -263,7 +231,8 @@ class Aditi(QMainWindow):
 
         self._plot_spectrum()
 
-        self.inf_line_tic_item.setPos(sum(times) / float(len(times)))
+        if times:
+            self.inf_line_tic_item.setPos(sum(times) / float(len(times)))
 
     def _plot_spectrum(self):
 
@@ -276,14 +245,14 @@ class Aditi(QMainWindow):
             if not rawfile.is_checked:
                 continue
             scan_id, mzs, intensities = rawfile.reader.get_scan(self.curr_scan_id_by_short_path[rawfile.short_path])
-            # min_mz = min(min_mz, mzs[0])
-            # max_mz = max(max_mz, mzs[-1])
-            # min_int = min(min_int, min(intensities))
-            # max_int = max(max_int, max(intensities))
+            min_mz = min(min_mz, mzs[0])
+            max_mz = max(max_mz, mzs[-1])
+            min_int = min(min_int, min(intensities))
+            max_int = max(max_int, max(intensities))
             item = BarGraphItem(x=mzs, height=intensities, width=0.01, pen=rawfile.qcolor, brush=rawfile.qcolor)
             self.plot_widget_spectrum.addItem(item)
 
-        #self.plot_widget_spectrum.setLimits(xMin=min_mz, xMax=max_mz, yMin=min_int, yMax=max_int)
+        self.plot_widget_spectrum.setLimits(xMin=min_mz, xMax=max_mz, yMin=min_int, yMax=max_int)
 
     def plot_spectrum(self, ev):
         #clear
@@ -310,14 +279,14 @@ class Aditi(QMainWindow):
                 continue
             scan_id, mzs, intensities = rawfile.reader.get_scan_for_time(t)
             self.curr_scan_id_by_short_path[rawfile.short_path] = scan_id
-            # min_mz = min(min_mz, mzs[0])
-            # max_mz = max(max_mz, mzs[-1])
-            # min_int = min(min_int, min(intensities))
-            # max_int = max(max_int, max(intensities))
+            min_mz = min(min_mz, mzs[0])
+            max_mz = max(max_mz, mzs[-1])
+            min_int = min(min_int, min(intensities))
+            max_int = max(max_int, max(intensities))
             item = BarGraphItem(x=mzs, height=intensities, width=0.01, pen=rawfile.qcolor, brush=rawfile.qcolor)
             self.plot_widget_spectrum.addItem(item)
 
-        #self.plot_widget_spectrum.setLimits(xMin=min_mz, xMax=max_mz, yMin=min_int, yMax=max_int)
+        self.plot_widget_spectrum.setLimits(xMin=min_mz, xMax=max_mz, yMin=min_int, yMax=max_int)
 
     def item_changed(self, item):
         print "item changed", item.text()
@@ -354,16 +323,16 @@ class Aditi(QMainWindow):
                 self.rawfile_model.appendRow(Aditi.get_coloured_root_item(filename, c, c_))
 
                 times, intensities = rawfile.reader.get_tic_v2()
-                # min_time = min(min_time, min(times))
-                # max_time = max(max_time, max(times))
-                # min_int = min(min_int, min(intensities))
-                # max_int = max(max_int, max(intensities))
+                min_time = min(min_time, min(times))
+                max_time = max(max_time, max(times))
+                min_int = min(min_int, min(intensities))
+                max_int = max(max_int, max(intensities))
                 self.plot_widget_tic.plot(times, intensities, pen=mkPen(color=rawfile.qcolor, width=1.3))
 
             else:
                 not_database.append(str(filename))
 
-        #self.plot_widget_tic.setLimits(xMin=min_time, xMax=max_time, yMin=min_int, yMax=max_int)
+        self.plot_widget_tic.setLimits(xMin=min_time, xMax=max_time, yMin=min_int, yMax=max_int)
         self.plot_widget_tic.scene().sigMouseClicked.connect(self.plot_spectrum)
 
         if not_database:

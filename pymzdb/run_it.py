@@ -70,19 +70,23 @@ class RunSliceIterator(object):
 
 if __name__ == '__main__':
     #filename = "D:\\LCMS\\raw_files\\huvec\\OEEMB100712_05.raw.mzDB"
-    filename = "C:\\Users\\Marco\\Desktop\\X20140626_006DP_pos_122.raw.mzdb"
-    #ri = RunSliceIterator(filename, 1)
-    # c, i = 0, 1
-    # t1 = time.clock()
+    from mzdb_reader import MzDBReader
+    import time
+    filename = "D:\\Utilisateurs\\Marc\\Desktop\\developpement\\plantage fichiers\\slice_vides\\QEAGP141203_10.raw.mzDB"
+    reader = MzDBReader(filename)
+    ri = RunSliceIterator(reader, 1)
+    c, i = 0, 1
+    t1 = time.clock()
 
-    # while ri.has_next():
-    #     print "runSlice #{}".format(i)
-    #     header, ss = ri.next()
-    #     for s in ss:
-    #         c += len(s.mzs)
-    #     i += 1
-    # print "tot_nb_peaks:", c
-    # print "Elapsed:", time.clock() - t1
+    while ri.has_next():
+        print "runSlice #{}".format(i)
+        header, ss = ri.next()
+        for s in ss:
+             c += len(s.mzs)
+        i += 1
+    print "tot_nb_peaks:", c
+    print "Elapsed:", time.clock() - t1
+
     # reader = MzDBReader(filename)
     # #scan_id, mzs, ints = reader.get_scan(reader.connection.cursor(), 56)
     # #scan_id_, mzs_, ints_ = reader.get_scan(reader.connection.cursor(), 57)
