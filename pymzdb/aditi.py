@@ -1,7 +1,3 @@
-
-
-
-__author__ = 'Marco'
 __version__ = "0.0.1"
 
 import time
@@ -214,9 +210,9 @@ class Aditi(QMainWindow):
                 if not rawfile.is_checked:
                     continue
                 curr_scan_id = self.curr_scan_id_by_short_path[rawfile.short_path]
-                scan_ids = rawfile.reader.elution_time_by_scan_id_by_ms_level[1].keys()
+                scan_ids = rawfile.reader.rt_by_scan_id_by_ms_level[1].keys()
                 idx = scan_ids.index(curr_scan_id)
-                times.append(rawfile.reader.elution_time_by_scan_id_by_ms_level[1][scan_ids[idx - 1]])
+                times.append(rawfile.reader.rt_by_scan_id_by_ms_level[1][scan_ids[idx - 1]])
                 self.curr_scan_id_by_short_path[rawfile.short_path] = scan_ids[idx - 1]
 
         elif evt.key() == Qt.Key_Right:
@@ -224,9 +220,9 @@ class Aditi(QMainWindow):
                 if not rawfile.is_checked:
                     continue
                 curr_scan_id = self.curr_scan_id_by_short_path[rawfile.short_path]
-                scan_ids = rawfile.reader.elution_time_by_scan_id_by_ms_level[1].keys()
+                scan_ids = rawfile.reader.rt_by_scan_id_by_ms_level[1].keys()
                 idx = scan_ids.index(curr_scan_id)
-                times.append(rawfile.reader.elution_time_by_scan_id_by_ms_level[1][scan_ids[idx + 1]])
+                times.append(rawfile.reader.rt_by_scan_id_by_ms_level[1][scan_ids[idx + 1]])
                 self.curr_scan_id_by_short_path[rawfile.short_path] = scan_ids[idx + 1]
 
         self._plot_spectrum()
@@ -322,7 +318,7 @@ class Aditi(QMainWindow):
                 self.rawfiles_by_short_path[filename] = rawfile   #[MzDBReader(abs_path), c, True]
                 self.rawfile_model.appendRow(Aditi.get_coloured_root_item(filename, c, c_))
 
-                times, intensities = rawfile.reader.get_tic_v2()
+                times, intensities = rawfile.reader.get_tic()
                 min_time = min(min_time, min(times))
                 max_time = max(max_time, max(times))
                 min_int = min(min_int, min(intensities))

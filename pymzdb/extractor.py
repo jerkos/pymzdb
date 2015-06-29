@@ -13,12 +13,6 @@ import numpy as np
 from mzdb_reader import MzDBReader
 from run_it import RunSliceIterator
 
-# def flatten(l):
-#     for i in l:
-#         print i, "\n"
-#     return list(chain.from_iterable(l))
-
-
 
 def flatten(iterable):
     """

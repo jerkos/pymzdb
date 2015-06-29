@@ -1,8 +1,5 @@
-import sqlite3 as sql
-import struct
 from model import BoundingBox, bb_to_scan_slices
 from model import RunSliceHeader
-from model import ScanSlice
 
 
 class RunSliceIterator(object):
@@ -37,7 +34,7 @@ class RunSliceIterator(object):
         if self.first_run_slice_bb is None:
             raise StopIteration
         self.curr_scan_slices = bb_to_scan_slices(
-            bytes(self.first_run_slice_bb.data), self.first_run_slice_bb.run_slice_id)
+            bytes(self.first_run_slice_bb.data), self.first_run_slice_bb.run_slice_id, self.reader.struct_by_scan_id)
 
         while 1:
             row = self.cursor.fetchone()
@@ -47,7 +44,7 @@ class RunSliceIterator(object):
             bb = BoundingBox._make(row)
             if bb.run_slice_id == self.first_run_slice_bb.run_slice_id:
                 self.curr_scan_slices += bb_to_scan_slices(
-                    bytes(bb.data), bb.run_slice_id)
+                    bytes(bb.data), bb.run_slice_id, self.reader.struct_by_scan_id)
             else:
                 self.first_run_slice_bb = bb
                 break
@@ -69,7 +66,6 @@ class RunSliceIterator(object):
 
 
 if __name__ == '__main__':
-    #filename = "D:\\LCMS\\raw_files\\huvec\\OEEMB100712_05.raw.mzDB"
     from mzdb_reader import MzDBReader
     import time
     filename = "D:\\Utilisateurs\\Marc\\Desktop\\developpement\\plantage fichiers\\slice_vides\\QEAGP141203_10.raw.mzDB"
@@ -86,27 +82,3 @@ if __name__ == '__main__':
         i += 1
     print "tot_nb_peaks:", c
     print "Elapsed:", time.clock() - t1
-
-    # reader = MzDBReader(filename)
-    # #scan_id, mzs, ints = reader.get_scan(reader.connection.cursor(), 56)
-    # #scan_id_, mzs_, ints_ = reader.get_scan(reader.connection.cursor(), 57)
-    # import time
-    # t1 = time.clock()
-    # peaks = reader.get_xic(104.1, 104.2)
-    # print time.clock() - t1
-    # print "len(peaks):", len(peaks)
-    # for p in peaks:
-    #     print str(p)
-
-    # import pyqtgraph as pg
-    # qapp = pg.mkQApp()
-    # pg.setConfigOptions(antialias=True)
-    # lw = pg.GraphicsLayoutWidget()
-    # #lw.addItem(pg.plot(mzs, ints, pen='b').getPlotItem())
-    # #gridItem = pg.GridItem()
-    # #pw.addItem(gridItem)
-    # #pw.setLimits(xMin=mzs[0], xMax=mzs[-1], yMin=min(ints), yMax=max(ints))
-    # #lw.addItem(pg.plot(mzs_, ints_, pen="r").getPlotItem())
-    # lw.show()
-
-    #qapp.exec_()

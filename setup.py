@@ -10,20 +10,15 @@ import glob
 # We also need to include include various numerix libraries that the other functions call.
 
 opts = {
-    'py2exe': { 'packages':[],
-    
-                'includes':['sip'],
-                
-                'excludes': ['PyQt4.uic.port_v3'],
-                'dll_excludes': ['libgdk-win32-2.0-0.dll',
-                                 'libgobject-2.0-0.dll']
-            }
+    'py2exe': {'packages': [],
+               'includes': ['sip'],
+               'excludes': ['PyQt4.uic.port_v3'],
+               'dll_excludes': ['libgdk-win32-2.0-0.dll', 'libgobject-2.0-0.dll']
+               }
     }
 
 # Save matplotlib-data to mpl-data ( It is located in the matplotlib\mpl-data
 # folder and the compiled programs will look for it in \mpl-data
 # note: using matplotlib.get_mpldata_info
 
-
-# for console program use 'console = [{"script" : "scriptname.py"}]
-setup(console=[{"script" : "aditi.py"}], options=opts, requires=['pyopenms', 'numpy'])
+setup(console=[{"script": "aditi.py"}], options=opts, requires=['pyopenms', 'numpy'])
