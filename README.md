@@ -9,7 +9,7 @@ features:
 * [x] fetch spectrum
 * [x] XIC extraction
 * [x] run slice iteration
-* [] spectrum iteration
+* [ ] spectrum iteration
 
 ## Addons
 
